@@ -42,6 +42,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -87,27 +88,8 @@ public class AddressResolver {
           builder.nameServerAddresses(nameServerAddresses);
         }
 
-
-        Map<String, InetAddress> entries;
-        if (options.getHostsPath() != null) {
-          File file = vertx.resolveFile(options.getHostsPath()).getAbsoluteFile();
-          try {
-            if (!file.exists() || !file.isFile()) {
-              throw new IOException();
-            }
-            entries = HostsFileParser.parse(file);
-          } catch (IOException e) {
-            throw new VertxException("Cannot read hosts file " + file.getAbsolutePath());
-          }
-        } else if (options.getHostsValue() != null) {
-          try {
-            entries = HostsFileParser.parse(new StringReader(options.getHostsValue().toString()));
-          } catch (IOException e) {
-            throw new VertxException("Cannot read hosts config ", e);
-          }
-        } else {
-          entries = HostsFileParser.parseSilently();
-        }
+        // Get entries and clone it to guarantee it can be modified
+        Map<String, InetAddress> entries = new HashMap<>(entries(vertx, options));
 
         // When localhost is missing we just resolve it and add it
         try {
@@ -155,6 +137,28 @@ public class AddressResolver {
     }
 
     this.vertx = vertx;
+  }
+
+  private Map<String, InetAddress> entries(VertxInternal vertx, AddressResolverOptions options) {
+    if (options.getHostsPath() != null) {
+      File file = vertx.resolveFile(options.getHostsPath()).getAbsoluteFile();
+      try {
+        if (!file.exists() || !file.isFile()) {
+          throw new IOException();
+        }
+        return HostsFileParser.parse(file);
+      } catch (IOException e) {
+        throw new VertxException("Cannot read hosts file " + file.getAbsolutePath());
+      }
+    } else if (options.getHostsValue() != null) {
+      try {
+        return HostsFileParser.parse(new StringReader(options.getHostsValue().toString()));
+      } catch (IOException e) {
+        throw new VertxException("Cannot read hosts config ", e);
+      }
+    } else {
+      return HostsFileParser.parseSilently();
+    }
   }
 
   public void resolveHostname(String hostname, Handler<AsyncResult<InetAddress>> resultHandler) {
