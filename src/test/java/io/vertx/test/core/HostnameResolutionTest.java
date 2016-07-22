@@ -638,6 +638,7 @@ public class HostnameResolutionTest extends VertxTestBase {
     Map<String, String> records = new HashMap<>();
     records.put("host1", "127.0.0.2");
     records.put("host1.foo.com", "127.0.0.3");
+    records.put("host2.foo.com", "127.0.0.4");
 
     dnsServer.stop();
     dnsServer = FakeDNSServer.testResolveA(records);
@@ -665,6 +666,14 @@ public class HostnameResolutionTest extends VertxTestBase {
       latch2.countDown();
     }));
     awaitLatch(latch2);
+
+    // "host2" resolves to host2.foo.com with foo.com search domain
+    CountDownLatch latch3 = new CountDownLatch(1);
+    vertx.resolveAddress("host2", onSuccess(resolved -> {
+      assertEquals("127.0.0.4", resolved.getHostAddress());
+      latch3.countDown();
+    }));
+    awaitLatch(latch3);
   }
 
   @Test
