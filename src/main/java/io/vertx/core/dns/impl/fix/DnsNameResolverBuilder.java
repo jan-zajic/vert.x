@@ -84,7 +84,7 @@ public final class DnsNameResolverBuilder {
         try {
           String conf = new String(Files.readAllBytes(f.toPath()));
           ndots = parseNdotsFromResolvConf(conf);
-        } catch (IOException ignore) {
+        } catch (Exception ignore) {
         }
       }
     }
