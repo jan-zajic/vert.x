@@ -61,6 +61,7 @@ import java.util.List;
 import static io.netty.util.internal.ObjectUtil.checkNonEmpty;
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 import static io.netty.util.internal.ObjectUtil.checkPositive;
+import static io.netty.util.internal.ObjectUtil.checkPositiveOrZero;
 
 /**
  * A DNS-based {@link InetNameResolver}.
@@ -170,7 +171,7 @@ public class DnsNameResolver extends InetNameResolver {
     this.hostsFileEntriesResolver = checkNotNull(hostsFileEntriesResolver, "hostsFileEntriesResolver");
     this.resolveCache = resolveCache;
     this.searchDomains = checkNotNull(searchDomains, "searchDomains");
-    this.ndots = checkPositive(ndots, "ndots");
+    this.ndots = checkPositiveOrZero(ndots, "ndots");
 
     Bootstrap b = new Bootstrap();
     b.group(executor());

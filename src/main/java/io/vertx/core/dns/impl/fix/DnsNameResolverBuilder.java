@@ -23,13 +23,19 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.resolver.HostsFileEntriesResolver;
 import io.netty.resolver.dns.*;
 import io.netty.util.internal.InternalThreadLocalMap;
+import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.UnstableApi;
+import io.vertx.core.impl.launcher.commands.ExecUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 import static io.netty.util.internal.ObjectUtil.intValue;
@@ -40,7 +46,18 @@ import static io.netty.util.internal.ObjectUtil.intValue;
 @UnstableApi
 public final class DnsNameResolverBuilder {
 
+  private static final Pattern NDOTS_OPTIONS_PATTERN = Pattern.compile("^[ \\t\\f]*options[ \\t\\f]+ndots:[ \\t\\f]*(\\d)+(?=$|\\s)", Pattern.MULTILINE);
   private static final List<String> DEFAULT_SEACH_DOMAINS;
+  private static final int DEFAULT_NDOTS;
+
+  public static int parseNdotsFromResolvConf(String s) {
+    int ndots = -1;
+    Matcher matcher = NDOTS_OPTIONS_PATTERN.matcher(s);
+    while (matcher.find()) {
+      ndots = Integer.parseInt(matcher.group(1));
+    }
+    return ndots;
+  }
 
   static {
     ArrayList<String> searchDomains = new ArrayList<>();
@@ -59,6 +76,21 @@ public final class DnsNameResolverBuilder {
     DEFAULT_SEACH_DOMAINS = Collections.unmodifiableList(searchDomains);
   }
 
+  static {
+    int ndots = 1;
+    if (ExecUtils.isLinux()) {
+      File f = new File("/etc/resolv.conf");
+      if (f.exists() && f.isFile()) {
+        try {
+          String conf = new String(Files.readAllBytes(f.toPath()));
+          ndots = parseNdotsFromResolvConf(conf);
+        } catch (IOException ignore) {
+        }
+      }
+    }
+    DEFAULT_NDOTS = ndots;
+  }
+
   private final EventLoop eventLoop;
   private ChannelFactory<? extends DatagramChannel> channelFactory;
   private DnsServerAddresses nameServerAddresses = DnsServerAddresses.defaultAddresses();
@@ -75,7 +107,7 @@ public final class DnsNameResolverBuilder {
   private boolean optResourceEnabled = true;
   private HostsFileEntriesResolver hostsFileEntriesResolver = HostsFileEntriesResolver.DEFAULT;
   private List<String> searchDomains = DEFAULT_SEACH_DOMAINS;
-  private int ndots = 1;
+  private int ndots = DEFAULT_NDOTS;
 
   /**
    * Creates a new builder.

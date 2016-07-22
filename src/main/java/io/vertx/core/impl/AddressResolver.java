@@ -133,6 +133,8 @@ public class AddressResolver {
 
         if (options.getSearchDomains() != null) {
           builder.searchDomains(options.getSearchDomains());
+        }
+        if (options.getNdots() > -1) {
           builder.ndots(options.getNdots());
         }
       }
