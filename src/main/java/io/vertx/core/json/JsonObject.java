@@ -25,6 +25,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -53,6 +55,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     fromJson(json);
   }
 
+  /**
+   * Create an instance from a string of JSON with custom mapping
+   *
+   * @param json  the string of JSON
+   */
+  public JsonObject(ObjectMapper mapper, String json) {
+    fromJson(mapper, json);
+  }  
+  
   /**
    * Create a new, empty instance
    */
@@ -689,6 +700,15 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
   }
 
   /**
+   * Encode the JSON array to a string using custom ObjectMapper
+   *
+   * @return the string encoding
+   */
+  public String encode(ObjectMapper mapper) {
+    return Json.encode(mapper, map);
+  }  
+  
+  /**
    * Copy the JSON object
    *
    * @return a copy of the object
@@ -846,6 +866,10 @@ public class JsonObject implements Iterable<Map.Entry<String, Object>>, ClusterS
     return pos + length + 4;
   }
 
+  private void fromJson(ObjectMapper mapper, String json) {
+    map = Json.decodeValue(mapper, json, Map.class);
+  }
+  
   private void fromJson(String json) {
     map = Json.decodeValue(json, Map.class);
   }

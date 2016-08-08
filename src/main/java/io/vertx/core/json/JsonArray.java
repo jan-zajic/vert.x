@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
 /**
@@ -51,6 +53,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     fromJson(json);
   }
 
+  /**
+   * Create an instance from a String of JSON with custom mapping
+   *
+   * @param json the string of JSON
+   */  
+  public JsonArray(ObjectMapper mapper, String json) {
+	  fromJson(mapper, json);	  
+  }
+  
   /**
    * Create an empty instance
    */
@@ -551,6 +562,15 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
   }
 
   /**
+   * Encode the JSON array to a string using custom ObjectMapper
+   *
+   * @return the string encoding
+   */
+  public String encode(ObjectMapper mapper) {
+    return Json.encode(mapper, list);
+  }  
+  
+  /**
    * Make a copy of the JSON array
    *
    * @return a copy
@@ -634,10 +654,14 @@ public class JsonArray implements Iterable<Object>, ClusterSerializable {
     return pos + length + 4;
   }
 
-  private void fromJson(String json) {
-    list = Json.decodeValue(json, List.class);
+  private void fromJson(ObjectMapper mapper, String json) {
+    list = Json.decodeValue(mapper, json, List.class);
   }
 
+  private void fromJson(String json) {
+	list = Json.decodeValue(json, List.class);
+  }
+  
   private class Iter implements Iterator<Object> {
 
     final Iterator<Object> listIter;

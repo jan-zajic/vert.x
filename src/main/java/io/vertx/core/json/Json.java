@@ -16,15 +16,8 @@
 
 package io.vertx.core.json;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import static java.time.format.DateTimeFormatter.ISO_INSTANT;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Base64;
@@ -34,47 +27,66 @@ import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static java.time.format.DateTimeFormatter.ISO_INSTANT;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.vertx.core.Context;
+import io.vertx.core.ServiceHelper;
+import io.vertx.core.impl.VertxImpl;
+import io.vertx.core.spi.MapperFactory;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
 public class Json {
 
-  public static ObjectMapper mapper = new ObjectMapper();
-  public static ObjectMapper prettyMapper = new ObjectMapper();
-
+  public static ObjectMapper mapper;
+  public static ObjectMapper prettyMapper;
+  
   static {
-    // Non-standard JSON but we allow C style comments in our JSON
-    mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-    prettyMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-    prettyMapper.configure(SerializationFeature.INDENT_OUTPUT, true);
-
-    SimpleModule module = new SimpleModule();
-    module.addSerializer(JsonObject.class, new JsonObjectSerializer());
-    module.addSerializer(JsonArray.class, new JsonArraySerializer());
-    mapper.registerModule(module);
-    prettyMapper.registerModule(module);
+	  MapperFactory factory = ServiceHelper.loadFactory(MapperFactory.class);
+	  Json.mapper = factory.createMapper();
+	  Json.prettyMapper = factory.createPrettyMapper();
+  }
+  
+  private static ObjectMapper getMapper() {
+	  Context context = VertxImpl.context();
+	  if(context != null && context.getMapper() != null) {
+		  return context.getMapper();
+	  } else {
+		  return Json.mapper;
+	  }
+  }
+  
+  private static ObjectMapper getPrettyMapper() {
+	  Context context = VertxImpl.context();
+	  if(context != null && context.getPrettyMapper() != null) {
+		  return context.getPrettyMapper();
+	  } else {
+		  return Json.prettyMapper;
+	  }
+  }
+  
+  public static String encode(Object obj) throws EncodeException {
+    return Json.encode(getMapper(), obj);
+  }
+  
+  public static String encodePrettily(Object obj) throws EncodeException {
+    return Json.encode(getPrettyMapper(), obj);
   }
 
-  public static String encode(Object obj) throws EncodeException {
+  public static String encode(ObjectMapper mapper, Object obj) throws EncodeException {
     try {
       return mapper.writeValueAsString(obj);
     } catch (Exception e) {
       throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
     }
   }
-
-  public static String encodePrettily(Object obj) throws EncodeException {
-    try {
-      return prettyMapper.writeValueAsString(obj);
-    } catch (Exception e) {
-      throw new EncodeException("Failed to encode as JSON: " + e.getMessage());
-    }
-  }
-
+  
   public static <T> T decodeValue(String str, Class<T> clazz) throws DecodeException {
+    return decodeValue(getMapper(), str, clazz);
+  }
+  
+  public static <T> T decodeValue(ObjectMapper mapper, String str, Class<T> clazz) throws DecodeException {
     try {
       return mapper.readValue(str, clazz);
     }
@@ -132,17 +144,5 @@ public class Json {
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
-  private static class JsonObjectSerializer extends JsonSerializer<JsonObject> {
-    @Override
-    public void serialize(JsonObject value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeObject(value.getMap());
-    }
-  }
 
-  private static class JsonArraySerializer extends JsonSerializer<JsonArray> {
-    @Override
-    public void serialize(JsonArray value, JsonGenerator jgen, SerializerProvider provider) throws IOException {
-      jgen.writeObject(value.getList());
-    }
-  }
 }

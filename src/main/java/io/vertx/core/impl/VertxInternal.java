@@ -37,6 +37,8 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * This interface provides services for vert.x core internal use only
  * It is not part of the public API and should not be used by
@@ -127,4 +129,9 @@ public interface VertxInternal extends Vertx {
 
   @GenIgnore
   void removeCloseHook(Closeable hook);
+
+  ObjectMapper getMapper();
+
+  ObjectMapper getPrettyMapper();
+  
 }

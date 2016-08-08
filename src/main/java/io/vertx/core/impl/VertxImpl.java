@@ -54,6 +54,7 @@ import io.vertx.core.net.impl.NetServerImpl;
 import io.vertx.core.net.impl.ServerID;
 import io.vertx.core.shareddata.SharedData;
 import io.vertx.core.shareddata.impl.SharedDataImpl;
+import io.vertx.core.spi.MapperFactory;
 import io.vertx.core.spi.VerticleFactory;
 import io.vertx.core.spi.VertxMetricsFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
@@ -69,6 +70,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
@@ -113,6 +116,8 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   private final int defaultWorkerPoolSize;
   private final long defaultWorkerMaxExecTime;
   private final CloseHooks closeHooks;
+  private final ObjectMapper mapper;
+  private final ObjectMapper prettyMapper;
 
   VertxImpl() {
     this(new VertxOptions());
@@ -176,8 +181,39 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
       createAndStartEventBus(options, resultHandler);
     }
     this.sharedData = new SharedDataImpl(this, clusterManager);
+    
+    if(options.getMapperFactory() != null) {
+      MapperFactory mapperFactory = options.getMapperFactory();
+      this.mapper = mapperFactory.createMapper();
+      this.prettyMapper = mapperFactory.createPrettyMapper();
+    } else if(options.getMapperFactoryType() != null) {
+      String mapperFactoryClassName = options.getMapperFactoryType();    	
+	  MapperFactory mapperFactory = createMapperFactory(mapperFactoryClassName);
+	  if(mapperFactory != null) {
+		this.mapper = mapperFactory.createMapper();
+	  	this.prettyMapper = mapperFactory.createPrettyMapper();
+	  } else {
+		this.mapper = null;
+	  	this.prettyMapper = null;  
+	  }
+    } else {
+      this.mapper = null;
+  	  this.prettyMapper = null;
+    }
   }
 
+  private MapperFactory createMapperFactory(String mapperFactoryClassName) {
+	Class<MapperFactory> mapperFactoryClass;
+	try {
+	  mapperFactoryClass = (Class<MapperFactory>) Class.forName(mapperFactoryClassName);
+	  MapperFactory mapperFactory = mapperFactoryClass.newInstance();
+	  return mapperFactory;
+	} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+	  log.trace("cannot create MapperFactory "+mapperFactoryClassName, e);	
+	  return null;
+	}	  
+  }
+  
   private void createAndStartEventBus(VertxOptions options, Handler<AsyncResult<Vertx>> resultHandler) {
     if (options.isClustered()) {
       eventBus = new ClusteredEventBus(this, options, clusterManager, haManager);
@@ -966,4 +1002,15 @@ public class VertxImpl implements VertxInternal, MetricsProvider {
   public void removeCloseHook(Closeable hook) {
     closeHooks.remove(hook);
   }
+
+  @Override
+  public ObjectMapper getMapper() {
+	return mapper;
+  }
+
+  @Override
+  public ObjectMapper getPrettyMapper() {
+	return prettyMapper;
+  }
+
 }

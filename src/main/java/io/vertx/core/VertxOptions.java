@@ -21,6 +21,7 @@ import io.vertx.core.dns.AddressResolverOptions;
 import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.metrics.MetricsOptions;
+import io.vertx.core.spi.MapperFactory;
 import io.vertx.core.spi.cluster.ClusterManager;
 
 import java.util.Objects;
@@ -119,7 +120,7 @@ public class VertxOptions {
    * contains a stack trace
    */
   private static final long DEFAULT_WARNING_EXCEPTION_TIME = 5L * 1000 * 1000000;
-
+  
   private int eventLoopPoolSize = DEFAULT_EVENT_LOOP_POOL_SIZE;
   private int workerPoolSize = DEFAULT_WORKER_POOL_SIZE;
   private int internalBlockingPoolSize = DEFAULT_INTERNAL_BLOCKING_POOL_SIZE;
@@ -136,6 +137,9 @@ public class VertxOptions {
   private long warningExceptionTime = DEFAULT_WARNING_EXCEPTION_TIME;
   private EventBusOptions eventBusOptions = new EventBusOptions();
   private AddressResolverOptions addressResolverOptions = new AddressResolverOptions();
+  
+  private MapperFactory mapperFactory = null;
+  private String mapperFactoryType = null;
 
   /**
    * Default constructor
@@ -163,6 +167,8 @@ public class VertxOptions {
     this.warningExceptionTime = other.warningExceptionTime;
     this.eventBusOptions = new EventBusOptions(other.eventBusOptions);
     this.addressResolverOptions = other.addressResolverOptions != null ? new AddressResolverOptions() : null;
+    this.mapperFactory = other.mapperFactory;
+    this.mapperFactoryType = other.mapperFactoryType;
   }
 
   /**
@@ -648,6 +654,24 @@ public class VertxOptions {
     return this;
   }
 
+  public MapperFactory getMapperFactory() {
+	return mapperFactory;
+  }
+
+  public VertxOptions setMapperFactory(MapperFactory mapperFactory) {
+	this.mapperFactory = mapperFactory;
+	return this;
+  }
+
+  public String getMapperFactoryType() {
+	return mapperFactoryType;
+  }
+
+  public VertxOptions setMapperFactoryType(String mapperFactoryType) {
+	this.mapperFactoryType = mapperFactoryType;
+	return this;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -671,6 +695,10 @@ public class VertxOptions {
       return false;
     if (addressResolverOptions != null ? !addressResolverOptions.equals(that.addressResolverOptions) : that.addressResolverOptions != null)
       return false;
+    if (mapperFactory != null ? !mapperFactory.equals(that.mapperFactory) : that.mapperFactory != null) 
+      return false;
+    if (mapperFactoryType != null ? !mapperFactoryType.equals(that.mapperFactoryType) : that.mapperFactoryType != null)
+      return false;
     return !(metricsOptions != null ? !metricsOptions.equals(that.metricsOptions) : that.metricsOptions != null);
 
   }
@@ -690,6 +718,8 @@ public class VertxOptions {
     result = 31 * result + (metricsOptions != null ? metricsOptions.hashCode() : 0);
     result = 31 * result + (eventBusOptions != null ? eventBusOptions.hashCode() : 0);
     result = 31 * result + (addressResolverOptions != null ? addressResolverOptions.hashCode() : 0);
+    result = 31 * result + (mapperFactory != null ? mapperFactory.hashCode() : 0);
+    result = 31 * result + (mapperFactoryType != null ? mapperFactoryType.hashCode() : 0);    
     result = 31 * result + (int) (warningExceptionTime ^ (warningExceptionTime >>> 32));
     return result;
   }

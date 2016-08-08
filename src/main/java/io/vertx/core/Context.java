@@ -25,6 +25,8 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.List;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * The execution context of a {@link io.vertx.core.Handler} execution.
  * <p>
@@ -242,4 +244,8 @@ public interface Context {
   @GenIgnore
   void removeCloseHook(Closeable hook);
 
+  ObjectMapper getMapper();
+  
+  ObjectMapper getPrettyMapper();
+  
 }

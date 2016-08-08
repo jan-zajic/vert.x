@@ -30,6 +30,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * @author <a href="http://tfox.org">Tim Fox</a>
  */
@@ -366,4 +368,15 @@ public abstract class ContextImpl implements ContextInternal {
     }
     return deployment.deploymentOptions().getInstances();
   }
+  
+  @Override
+  public ObjectMapper getMapper() {
+	return this.owner.getMapper();
+  }
+  
+  @Override
+  public ObjectMapper getPrettyMapper() {
+	  return this.owner.getPrettyMapper();	
+  }
+  
 }
